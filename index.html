@@ -1,0 +1,2308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="OrçaObra" />
+  <title>OrçaObra — Orçamentos de Construção e Reformas</title>
+  <!-- Fonte Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+          colors: {
+            obra: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              500: '#f97316',
+              600: '#ea580c',
+              700: '#c2410c',
+            },
+            ardosia: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              200: '#e2e8f0',
+              700: '#334155',
+              800: '#1e293b',
+              900: '#0f172a',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    /* Ajustes visuais extras e estilos para impressão em PDF */
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #f1f5f9;
+      color: #0f172a;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Esconder barra de rolagem horizontal em abas de filtro mantendo rolagem suave */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Regras de impressão para gerar PDF limpo */
+    @media print {
+      body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-only-container {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      main {
+        padding-bottom: 0 !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-ardosia-100 text-ardosia-900">
+
+  <!-- Barra Superior Fixa (Mobile-First) -->
+  <header class="no-print sticky top-0 z-30 bg-ardosia-900 text-white shadow-md border-b border-ardosia-800">
+    <div class="max-w-xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <!-- Ícone SVG de Capacete / Ferramenta de Obra -->
+        <div class="w-10 h-10 rounded-xl bg-obra-500 flex items-center justify-center shrink-0 shadow-inner">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" />
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h1 id="header-app-title" class="text-base sm:text-lg font-extrabold tracking-tight truncate">OrçaObra</h1>
+            <button
+              type="button"
+              id="btn-quick-edit-brand"
+              class="text-[11px] font-semibold bg-obra-500/20 hover:bg-obra-500/30 text-obra-100 border border-obra-500/40 px-2 py-0.5 rounded-full transition"
+              title="Editar nome da empresa e telefone"
+            >
+              Editar
+            </button>
+          </div>
+          <p id="header-pro-subtitle" class="text-xs text-slate-300 truncate">Configure sua empresa e telefone na aba Perfil</p>
+        </div>
+      </div>
+
+      <!-- Botão rápido de Novo Orçamento -->
+      <button
+        type="button"
+        id="btn-new-budget-top"
+        class="shrink-0 bg-obra-500 hover:bg-obra-600 active:scale-95 text-white text-xs sm:text-sm font-bold px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow"
+        title="Iniciar novo orçamento"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+        <span>Novo</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Notificação / Toast não-bloqueante (substitui alert) -->
+  <div
+    id="toast-banner"
+    class="no-print fixed top-16 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md bg-ardosia-900 text-white px-4 py-3 rounded-2xl shadow-xl border border-obra-500/50 flex items-center justify-between gap-3 transition-all duration-300 opacity-0 pointer-events-none -translate-y-2"
+    role="status"
+    aria-live="polite"
+  >
+    <div class="flex items-center gap-2.5 text-sm font-medium">
+      <span class="w-2.5 h-2.5 rounded-full bg-obra-500 shrink-0"></span>
+      <span id="toast-message">Ação concluída!</span>
+    </div>
+  </div>
+
+  <!-- Área Principal do Aplicativo -->
+  <main class="flex-1 w-full max-w-xl mx-auto px-3 sm:px-4 pt-4 pb-28">
+
+    <!-- =========================================================
+         ABA 1: OBRA & CLIENTE (Dados do cliente, obra e pagamento)
+    ========================================================== -->
+    <section id="tab-obra" class="tab-panel space-y-4">
+      <!-- Card Resumo Rápido do Total Atual -->
+      <div class="no-print bg-gradient-to-r from-ardosia-900 to-ardosia-800 text-white rounded-2xl p-4 shadow-md flex items-center justify-between">
+        <div>
+          <p class="text-xs uppercase tracking-wider text-slate-300 font-semibold">Total do Orçamento Atual</p>
+          <p id="quick-total-obra" class="text-2xl font-extrabold text-obra-500 mt-0.5">R$ 0,00</p>
+          <p id="quick-count-obra" class="text-xs text-slate-300 mt-0.5">0 serviço(s) adicionado(s)</p>
+        </div>
+        <button
+          type="button"
+          data-go-tab="servicos"
+          class="bg-obra-500 hover:bg-obra-600 active:scale-95 text-white font-bold text-sm px-4 py-3 rounded-xl transition shadow"
+        >
+          + Serviços
+        </button>
+      </div>
+
+      <!-- Formulário Dados do Cliente e da Obra -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-ardosia-200 space-y-4">
+        <div class="flex items-center justify-between border-b border-ardosia-100 pb-3">
+          <h2 class="text-base font-bold text-ardosia-900 flex items-center gap-2">
+            <span class="w-2 h-5 rounded-full bg-obra-500"></span>
+            Dados do Cliente e da Obra
+          </h2>
+          <span class="text-xs text-slate-500 font-medium" id="budget-number-badge">Orçamento #01</span>
+        </div>
+
+        <div>
+          <label for="client-name" class="block text-sm font-semibold text-ardosia-800 mb-1.5">Nome do Cliente *</label>
+          <input
+            type="text"
+            id="client-name"
+            placeholder="Ex.: João Carlos Silva"
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 focus:bg-white px-4 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label for="client-phone" class="block text-sm font-semibold text-ardosia-800 mb-1.5">Telefone / WhatsApp</label>
+            <input
+              type="tel"
+              id="client-phone"
+              placeholder="(11) 99999-9999"
+              class="w-full rounded-xl border border-slate-300 bg-slate-50 focus:bg-white px-4 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+            />
+          </div>
+          <div>
+            <label for="budget-validity" class="block text-sm font-semibold text-ardosia-800 mb-1.5">Validade do Orçamento</label>
+            <select
+              id="budget-validity"
+              class="w-full rounded-xl border border-slate-300 bg-slate-50 focus:bg-white px-4 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+            >
+              <option value="7 dias">7 dias</option>
+              <option value="15 dias" selected>15 dias</option>
+              <option value="30 dias">30 dias</option>
+              <option value="10 dias">10 dias</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label for="site-address" class="block text-sm font-semibold text-ardosia-800 mb-1.5">Endereço da Obra</label>
+          <input
+            type="text"
+            id="site-address"
+            placeholder="Rua das Flores, 120 - Jardim América"
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 focus:bg-white px-4 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+          />
+        </div>
+
+        <div>
+          <label for="site-description" class="block text-sm font-semibold text-ardosia-800 mb-1.5">Descrição Breve do Serviço / Reforma</label>
+          <textarea
+            id="site-description"
+            rows="3"
+            placeholder="Ex.: Reforma completa do banheiro social e revisão elétrica/hidráulica da cozinha..."
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 focus:bg-white px-4 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+          ></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label for="estimated-deadline" class="block text-sm font-semibold text-ardosia-800 mb-1.5">Prazo Estimado de Execução</label>
+            <input
+              type="text"
+              id="estimated-deadline"
+              placeholder="Ex.: 5 dias úteis"
+              class="w-full rounded-xl border border-slate-300 bg-slate-50 focus:bg-white px-4 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+            />
+          </div>
+          <div>
+            <label for="service-warranty" class="block text-sm font-semibold text-ardosia-800 mb-1.5">Garantia dos Serviços</label>
+            <input
+              type="text"
+              id="service-warranty"
+              placeholder="Ex.: 90 dias na mão de obra"
+              class="w-full rounded-xl border border-slate-300 bg-slate-50 focus:bg-white px-4 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label for="materials-list" class="block text-sm font-semibold text-ardosia-800 mb-1.5">Lista de Materiais Sugerida (por conta do cliente - opcional)</label>
+          <textarea
+            id="materials-list"
+            rows="3"
+            placeholder="Ex.: 8 sacos de cimento CP-II, 3 sacos de argamassa AC-III, 2 caixas de piso 60x60, 10m de fio 2,5mm..."
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 focus:bg-white px-4 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Card Desconto e Condição de Pagamento -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-ardosia-200 space-y-4">
+        <h2 class="text-base font-bold text-ardosia-900 flex items-center gap-2 border-b border-ardosia-100 pb-3">
+          <span class="w-2 h-5 rounded-full bg-obra-500"></span>
+          Desconto e Pagamento
+        </h2>
+
+        <div>
+          <label class="block text-sm font-semibold text-ardosia-800 mb-1.5">Desconto Opcional</label>
+          <div class="flex gap-2">
+            <select
+              id="discount-type"
+              class="rounded-xl border border-slate-300 bg-slate-50 px-3 py-3 text-base font-semibold text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+            >
+              <option value="none">Sem desconto</option>
+              <option value="amount">Valor (R$)</option>
+              <option value="percent">Porcentagem (%)</option>
+            </select>
+            <input
+              type="number"
+              id="discount-value"
+              min="0"
+              step="0.01"
+              placeholder="0,00"
+              disabled
+              class="flex-1 rounded-xl border border-slate-300 bg-slate-100 px-4 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500 disabled:opacity-60"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label for="payment-terms" class="block text-sm font-semibold text-ardosia-800 mb-1.5">Sugestão de Condição de Pagamento</label>
+          <select
+            id="payment-preset"
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm font-medium text-ardosia-800 mb-2 focus:outline-none focus:ring-2 focus:ring-obra-500"
+          >
+            <option value="">-- Escolher sugestão rápida --</option>
+            <option value="50% de entrada para início da obra e 50% na entrega/conclusão dos serviços.">50% de entrada + 50% na entrega</option>
+            <option value="30% de entrada, 40% na metade da obra e 30% na finalização.">30% entrada / 40% meio / 30% final</option>
+            <option value="Pagamento por etapas concluídas (medição semanal/quinzenal).">Por etapas concluídas</option>
+            <option value="À vista com acerto na conclusão do serviço (PIX ou dinheiro).">À vista na conclusão (PIX / dinheiro)</option>
+          </select>
+          <textarea
+            id="payment-terms"
+            rows="2"
+            placeholder="Ex.: 50% de entrada para início da obra e 50% na entrega."
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 focus:bg-white px-4 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+          ></textarea>
+        </div>
+
+        <button
+          type="button"
+          data-go-tab="servicos"
+          class="w-full bg-obra-500 hover:bg-obra-600 active:scale-[0.99] text-white font-bold text-base py-3.5 px-5 rounded-xl transition shadow flex items-center justify-center gap-2"
+        >
+          <span>Avançar para Serviços do Orçamento</span>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         ABA 2: SERVIÇOS (Catálogo rápido + Itens adicionados)
+    ========================================================== -->
+    <section id="tab-servicos" class="tab-panel hidden space-y-4">
+
+      <!-- Itens Já Adicionados ao Orçamento -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-ardosia-200 space-y-3">
+        <div class="flex items-center justify-between border-b border-ardosia-100 pb-3">
+          <h2 class="text-base font-bold text-ardosia-900 flex items-center gap-2">
+            <span class="w-2 h-5 rounded-full bg-obra-500"></span>
+            Itens no Orçamento (<span id="items-count-badge">0</span>)
+          </h2>
+          <button
+            type="button"
+            id="btn-open-custom-item"
+            class="bg-ardosia-900 hover:bg-ardosia-800 active:scale-95 text-white text-xs sm:text-sm font-bold px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5"
+          >
+            <svg class="w-4 h-4 text-obra-500" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Item Personalizado</span>
+          </button>
+        </div>
+
+        <!-- Lista de itens adicionados -->
+        <div id="budget-items-list" class="space-y-3">
+          <!-- Renderizado via JS -->
+        </div>
+
+        <!-- Resumo financeiro compacto dentro da aba Serviços -->
+        <div id="services-financial-summary" class="bg-ardosia-50 rounded-xl p-3.5 border border-ardosia-200 space-y-1.5 text-sm">
+          <div class="flex justify-between text-slate-600">
+            <span>Subtotal dos serviços:</span>
+            <span id="srv-subtotal" class="font-semibold text-ardosia-900">R$ 0,00</span>
+          </div>
+          <div id="srv-discount-row" class="hidden flex justify-between text-emerald-700 font-medium">
+            <span>Desconto:</span>
+            <span id="srv-discount">- R$ 0,00</span>
+          </div>
+          <div class="flex justify-between text-base font-extrabold text-ardosia-900 pt-1.5 border-t border-ardosia-200">
+            <span>Total Estimado:</span>
+            <span id="srv-total" class="text-obra-600 text-lg">R$ 0,00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Catálogo de Serviços Pré-Cadastrados com 1 Clique -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-ardosia-200 space-y-3.5">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-bold text-ardosia-900 flex items-center gap-2">
+              <span class="w-2 h-5 rounded-full bg-obra-500"></span>
+              Adicionar Serviço Rápido (1 toque)
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">Toque em um serviço para adicionar ou edite valores/catálogo</p>
+          </div>
+          <button
+            type="button"
+            id="btn-toggle-catalog-edit"
+            class="text-xs font-bold text-obra-600 bg-obra-50 hover:bg-obra-100 px-3 py-2 rounded-xl border border-obra-200 transition"
+          >
+            Editar Catálogo
+          </button>
+        </div>
+
+        <!-- Filtro por Categoria -->
+        <div id="category-filter-bar" class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+          <!-- Botões de categoria gerados via JS -->
+        </div>
+
+        <!-- Busca rápida no catálogo -->
+        <div class="relative">
+          <input
+            type="search"
+            id="catalog-search-input"
+            placeholder="Buscar serviço (ex.: chuveiro, piso, reboco, pintura)..."
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 focus:bg-white pl-10 pr-4 py-2.5 text-sm text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+          />
+          <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z" />
+          </svg>
+        </div>
+
+        <!-- Lista de Serviços do Catálogo -->
+        <div id="catalog-list" class="space-y-2.5">
+          <!-- Renderizado via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         ABA 3: RESUMO & ENVIO (Prévia formatada, copiar WhatsApp, PDF, Salvar)
+    ========================================================== -->
+    <section id="tab-resumo" class="tab-panel hidden space-y-4">
+
+      <!-- Botões de Ação Principais (ocultos na impressão) -->
+      <div class="no-print bg-white rounded-2xl p-4 shadow-sm border border-ardosia-200 space-y-2.5">
+        <button
+          type="button"
+          id="btn-send-whatsapp-direct"
+          class="w-full bg-[#25D366] hover:bg-[#1ebe5d] active:scale-[0.99] text-white font-extrabold text-sm sm:text-base py-3.5 px-4 rounded-xl transition shadow flex items-center justify-center gap-2"
+        >
+          <svg class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M20.52 3.48A11.86 11.86 0 0012.06 0C5.5 0 .16 5.34.16 11.9c0 2.1.55 4.15 1.6 5.95L0 24l6.33-1.66a11.86 11.86 0 005.73 1.46h.01c6.56 0 11.9-5.34 11.9-11.9 0-3.18-1.24-6.17-3.45-8.42zM12.07 21.8h-.01a9.87 9.87 0 01-5.03-1.38l-.36-.21-3.76.99 1-3.66-.24-.38a9.85 9.85 0 01-1.51-5.26c0-5.45 4.44-9.89 9.9-9.89 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 012.9 7c0 5.46-4.44 9.89-9.88 9.89zm5.43-7.41c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.39-1.48-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.07 2.88 1.21 3.07.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.7.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35z"/>
+          </svg>
+          <span>Enviar Direto no WhatsApp</span>
+        </button>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <button
+            type="button"
+            id="btn-copy-whatsapp"
+            class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold text-sm sm:text-base py-3.5 px-4 rounded-xl transition shadow flex items-center justify-center gap-2"
+          >
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            <span>Copiar Texto</span>
+          </button>
+
+          <button
+            type="button"
+            id="btn-print-pdf"
+            class="w-full bg-ardosia-900 hover:bg-ardosia-800 active:scale-[0.99] text-white font-bold text-sm sm:text-base py-3.5 px-4 rounded-xl transition shadow flex items-center justify-center gap-2"
+          >
+            <svg class="w-5 h-5 shrink-0 text-obra-500" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            <span>Imprimir / Salvar PDF</span>
+          </button>
+        </div>
+
+        <button
+          type="button"
+          id="btn-save-history"
+          class="w-full bg-obra-500 hover:bg-obra-600 active:scale-[0.99] text-white font-bold text-sm sm:text-base py-3 px-4 rounded-xl transition shadow flex items-center justify-center gap-2"
+        >
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+          </svg>
+          <span>Salvar Orçamento no Histórico</span>
+        </button>
+      </div>
+
+      <!-- Folha de Resumo / Prévia Formatada do Orçamento -->
+      <div id="budget-preview-sheet" class="print-only-container bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-ardosia-200 space-y-5">
+        <!-- Cabeçalho da Empresa / Profissional -->
+        <div class="border-b-2 border-obra-500 pb-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div class="space-y-1">
+            <span class="inline-block text-[11px] font-bold uppercase tracking-wider bg-obra-100 text-obra-700 px-2.5 py-0.5 rounded-full">
+              Orçamento de Serviço
+            </span>
+            <h2 id="prev-pro-name" class="text-xl sm:text-2xl font-extrabold text-ardosia-900 leading-tight">Minha Empresa de Reformas</h2>
+            <p id="prev-pro-specialty" class="text-sm font-semibold text-obra-600">Construção Civil, Elétrica, Hidráulica e Reformas</p>
+            <div class="pt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-bold text-ardosia-800">
+              <span id="prev-pro-phone-display" class="inline-flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-lg">
+                <span>Tel / WhatsApp:</span>
+                <span id="prev-pro-phone-value" class="text-ardosia-900">Não informado</span>
+              </span>
+              <span id="prev-pro-doc-display" class="hidden text-xs font-semibold text-slate-600"></span>
+            </div>
+            <p id="prev-pro-city-display" class="hidden text-xs text-slate-500"></p>
+          </div>
+          <div class="sm:text-right text-xs text-slate-500 space-y-0.5 shrink-0">
+            <p id="prev-budget-code" class="font-bold text-ardosia-800 text-sm">ORÇAMENTO #01</p>
+            <p id="prev-budget-date">Data: --/--/----</p>
+            <p id="prev-budget-validity">Validade: 15 dias</p>
+          </div>
+        </div>
+
+        <!-- Dados do Cliente e Obra -->
+        <div class="bg-ardosia-50 rounded-xl p-3.5 border border-ardosia-200 text-sm space-y-1">
+          <p class="font-bold text-ardosia-900 uppercase text-xs tracking-wider mb-1">Cliente e Local da Obra</p>
+          <p><span class="font-semibold text-slate-700">Cliente:</span> <span id="prev-client-name" class="text-ardosia-900 font-medium">Não informado</span></p>
+          <p id="prev-client-phone-row"><span class="font-semibold text-slate-700">Telefone:</span> <span id="prev-client-phone">Não informado</span></p>
+          <p id="prev-site-address-row"><span class="font-semibold text-slate-700">Endereço:</span> <span id="prev-site-address">Não informado</span></p>
+          <p id="prev-site-desc-row" class="pt-1"><span class="font-semibold text-slate-700">Descrição:</span> <span id="prev-site-desc" class="text-slate-700"></span></p>
+          <div id="prev-deadline-warranty-row" class="hidden pt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-ardosia-800">
+            <span id="prev-deadline-badge" class="hidden"></span>
+            <span id="prev-warranty-badge" class="hidden"></span>
+          </div>
+        </div>
+
+        <!-- Tabela / Lista de Serviços -->
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5">Serviços Discriminados</h3>
+          <div id="prev-items-container" class="divide-y divide-ardosia-100 border border-ardosia-200 rounded-xl overflow-hidden">
+            <!-- Renderizado via JS -->
+          </div>
+        </div>
+
+        <!-- Totais -->
+        <div class="bg-ardosia-900 text-white rounded-xl p-4 space-y-2">
+          <div class="flex justify-between text-sm text-slate-300">
+            <span>Subtotal</span>
+            <span id="prev-subtotal" class="font-semibold text-white">R$ 0,00</span>
+          </div>
+          <div id="prev-discount-row" class="hidden flex justify-between text-sm text-emerald-300 font-medium">
+            <span id="prev-discount-label">Desconto</span>
+            <span id="prev-discount-val">- R$ 0,00</span>
+          </div>
+          <div class="flex justify-between text-lg font-extrabold pt-2 border-t border-slate-700">
+            <span>Valor Total</span>
+            <span id="prev-total" class="text-obra-500">R$ 0,00</span>
+          </div>
+        </div>
+
+        <!-- Condição de Pagamento e PIX -->
+        <div class="bg-obra-50 border border-obra-200 rounded-xl p-3.5 text-sm space-y-2">
+          <div>
+            <p class="font-bold text-obra-700 text-xs uppercase tracking-wider mb-1">Condição de Pagamento</p>
+            <p id="prev-payment-terms" class="text-ardosia-900 font-medium">A combinar</p>
+          </div>
+          <div id="prev-pix-box" class="hidden pt-2 border-t border-obra-200/80">
+            <p class="text-xs font-bold text-ardosia-800">Chave PIX para Pagamento: <span id="prev-pix-value" class="font-extrabold text-obra-700 select-all"></span></p>
+          </div>
+        </div>
+
+        <!-- Lista de Materiais Sugerida (por conta do cliente) -->
+        <div id="prev-materials-box" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm">
+          <p class="font-bold text-ardosia-800 text-xs uppercase tracking-wider mb-1">Materiais Sugeridos (por conta do cliente)</p>
+          <p id="prev-materials-text" class="text-slate-700 whitespace-pre-line leading-relaxed"></p>
+        </div>
+      </div>
+
+      <!-- Texto Pronto para WhatsApp (Expansível/Visualização) -->
+      <div class="no-print bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-ardosia-200 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold text-ardosia-900">Mensagem Pronta para WhatsApp</h3>
+          <button
+            type="button"
+            id="btn-copy-whatsapp-secondary"
+            class="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-200 transition"
+          >
+            Copiar texto
+          </button>
+        </div>
+        <pre
+          id="whatsapp-preview-text"
+          class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-800 whitespace-pre-wrap font-sans leading-relaxed overflow-x-auto"
+        ></pre>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         ABA 4: PERFIL & HISTÓRICO (Dados da Empresa + Orçamentos Salvos)
+    ========================================================== -->
+    <section id="tab-perfil" class="tab-panel hidden space-y-4">
+
+      <!-- Dados da Empresa / Profissional -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-ardosia-200 space-y-4">
+        <div class="flex items-center justify-between border-b border-ardosia-100 pb-3">
+          <h2 class="text-base font-bold text-ardosia-900 flex items-center gap-2">
+            <span class="w-2 h-5 rounded-full bg-obra-500"></span>
+            Minha Empresa / Identidade
+          </h2>
+          <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">Salvo no aparelho</span>
+        </div>
+
+        <div>
+          <label for="pro-name" class="block text-sm font-semibold text-ardosia-800 mb-1.5">Nome da Empresa / Nome do Programa *</label>
+          <input
+            type="text"
+            id="pro-name"
+            placeholder="Ex.: Silva Construções & Reformas"
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 focus:bg-white px-4 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+          />
+          <p class="text-xs text-slate-500 mt-1">Este nome aparece no topo do aplicativo e no cabeçalho de todos os seus orçamentos.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label for="pro-phone" class="block text-sm font-semibold text-ardosia-800 mb-1.5">Seu Telefone / WhatsApp *</label>
+            <input
+              type="tel"
+              id="pro-phone"
+              placeholder="(11) 98888-7777"
+              class="w-full rounded-xl border border-slate-300 bg-slate-50 focus:bg-white px-4 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+            />
+          </div>
+          <div>
+            <label for="pro-doc" class="block text-sm font-semibold text-ardosia-800 mb-1.5">CNPJ ou CPF (opcional)</label>
+            <input
+              type="text"
+              id="pro-doc"
+              placeholder="00.000.000/0001-00"
+              class="w-full rounded-xl border border-slate-300 bg-slate-50 focus:bg-white px-4 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label for="pro-specialty" class="block text-sm font-semibold text-ardosia-800 mb-1.5">Subtítulo / Especialidades</label>
+          <input
+            type="text"
+            id="pro-specialty"
+            placeholder="Ex.: Construção Civil, Elétrica, Hidráulica e Reformas"
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 focus:bg-white px-4 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+          />
+        </div>
+
+        <div>
+          <label for="pro-city" class="block text-sm font-semibold text-ardosia-800 mb-1.5">Cidade / Região de Atendimento (opcional)</label>
+          <input
+            type="text"
+            id="pro-city"
+            placeholder="Ex.: Guarulhos e Grande São Paulo"
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 focus:bg-white px-4 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+          />
+        </div>
+
+        <div>
+          <label for="pro-pix" class="block text-sm font-semibold text-ardosia-800 mb-1.5">Chave PIX (opcional — sai no orçamento)</label>
+          <input
+            type="text"
+            id="pro-pix"
+            placeholder="Ex.: Celular, CPF/CNPJ, E-mail ou Chave Aleatória"
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 focus:bg-white px-4 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+          />
+        </div>
+
+        <button
+          type="button"
+          id="btn-save-profile"
+          class="w-full bg-obra-500 hover:bg-obra-600 active:scale-[0.99] text-white font-bold text-base py-3.5 px-5 rounded-xl transition shadow"
+        >
+          Salvar Dados da Empresa
+        </button>
+      </div>
+
+      <!-- Histórico de Orçamentos Salvos -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-ardosia-200 space-y-3.5">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-ardosia-100 pb-3">
+          <h2 class="text-base font-bold text-ardosia-900 flex items-center gap-2">
+            <span class="w-2 h-5 rounded-full bg-obra-500"></span>
+            Orçamentos Salvos (<span id="history-count">0</span>)
+          </h2>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              id="btn-clear-all-history"
+              class="hidden text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-2 rounded-xl transition"
+            >
+              Apagar Todos
+            </button>
+            <button
+              type="button"
+              id="btn-save-current-from-profile"
+              class="text-xs font-bold bg-ardosia-900 hover:bg-ardosia-800 text-white px-3 py-2 rounded-xl transition"
+            >
+              + Salvar Atual
+            </button>
+          </div>
+        </div>
+
+        <!-- Busca e filtro de status no histórico -->
+        <div id="history-filters-bar" class="hidden space-y-2">
+          <input
+            type="search"
+            id="history-search-input"
+            placeholder="Buscar orçamento por nome do cliente ou endereço..."
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 focus:bg-white px-3.5 py-2.5 text-sm text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+          />
+          <div class="flex gap-1.5 overflow-x-auto no-scrollbar">
+            <button type="button" data-hist-status-filter="todos" class="hist-status-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-ardosia-900 text-white">Todos</button>
+            <button type="button" data-hist-status-filter="pendente" class="hist-status-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700">Pendentes</button>
+            <button type="button" data-hist-status-filter="aprovado" class="hist-status-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700">Aprovados</button>
+            <button type="button" data-hist-status-filter="recusado" class="hist-status-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700">Recusados</button>
+          </div>
+        </div>
+
+        <div id="history-list" class="space-y-2.5">
+          <!-- Renderizado via JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =========================================================
+       NAVEGAÇÃO INFERIOR FIXA (4 ABAS MOBILE-FIRST)
+  ========================================================== -->
+  <nav
+    aria-label="Navegação principal"
+    class="no-print fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-t border-ardosia-200 shadow-[0_-4px_16px_rgba(15,23,42,0.08)]"
+  >
+    <div class="max-w-xl mx-auto grid grid-cols-4 h-16">
+      <!-- Aba 1: Obra -->
+      <button
+        type="button"
+        data-tab="obra"
+        class="nav-tab-btn flex flex-col items-center justify-center gap-0.5 text-obra-600 font-bold text-xs transition active:scale-95"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+        <span>Obra</span>
+      </button>
+
+      <!-- Aba 2: Serviços -->
+      <button
+        type="button"
+        data-tab="servicos"
+        class="nav-tab-btn flex flex-col items-center justify-center gap-0.5 text-slate-500 font-semibold text-xs transition active:scale-95 relative"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+        </svg>
+        <span>Serviços</span>
+        <span id="nav-items-badge" class="hidden absolute top-2 right-5 bg-obra-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full">0</span>
+      </button>
+
+      <!-- Aba 3: Resumo -->
+      <button
+        type="button"
+        data-tab="resumo"
+        class="nav-tab-btn flex flex-col items-center justify-center gap-0.5 text-slate-500 font-semibold text-xs transition active:scale-95"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <span>Resumo</span>
+      </button>
+
+      <!-- Aba 4: Histórico & Perfil -->
+      <button
+        type="button"
+        data-tab="perfil"
+        class="nav-tab-btn flex flex-col items-center justify-center gap-0.5 text-slate-500 font-semibold text-xs transition active:scale-95"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+        <span>Perfil</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- =========================================================
+       MODAL: CRIAR / EDITAR ITEM PERSONALIZADO OU CATÁLOGO
+  ========================================================== -->
+  <div
+    id="item-modal"
+    class="no-print fixed inset-0 z-50 bg-ardosia-900/70 backdrop-blur-xs hidden items-end sm:items-center justify-center p-0 sm:p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-title"
+  >
+    <div class="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-ardosia-100 pb-3">
+        <h3 id="modal-title" class="text-lg font-extrabold text-ardosia-900">Novo Serviço Personalizado</h3>
+        <button
+          type="button"
+          id="btn-close-modal"
+          class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 font-bold"
+          aria-label="Fechar janela"
+        >
+          ✕
+        </button>
+      </div>
+
+      <form id="item-modal-form" class="space-y-3.5">
+        <input type="hidden" id="modal-mode" value="budget-item" />
+        <input type="hidden" id="modal-edit-id" value="" />
+
+        <div>
+          <label for="modal-category" class="block text-sm font-semibold text-ardosia-800 mb-1">Categoria *</label>
+          <select
+            id="modal-category"
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+          >
+            <option value="Civil">Civil</option>
+            <option value="Elétrica">Elétrica</option>
+            <option value="Hidráulica">Hidráulica</option>
+            <option value="Reformas em Geral">Reformas em Geral</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="modal-description" class="block text-sm font-semibold text-ardosia-800 mb-1">Descrição do Serviço *</label>
+          <input
+            type="text"
+            id="modal-description"
+            required
+            placeholder="Ex.: Assentamento de porcelanato 80x80"
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+          />
+        </div>
+
+        <div class="grid grid-cols-3 gap-2.5">
+          <div>
+            <label for="modal-unit" class="block text-sm font-semibold text-ardosia-800 mb-1">Unidade</label>
+            <select
+              id="modal-unit"
+              class="w-full rounded-xl border border-slate-300 bg-slate-50 px-2.5 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+            >
+              <option value="m²">m²</option>
+              <option value="m">m</option>
+              <option value="un" selected>un</option>
+              <option value="pt">pt (ponto)</option>
+              <option value="dia">dia</option>
+              <option value="vb">vb (verba)</option>
+            </select>
+          </div>
+
+          <div id="modal-qty-wrapper">
+            <label for="modal-qty" class="block text-sm font-semibold text-ardosia-800 mb-1">Quantidade</label>
+            <input
+              type="number"
+              id="modal-qty"
+              min="0.01"
+              step="0.01"
+              value="1"
+              class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+            />
+          </div>
+
+          <div id="modal-price-wrapper" class="col-span-1">
+            <label for="modal-price" class="block text-sm font-semibold text-ardosia-800 mb-1">Valor Unit. (R$)</label>
+            <input
+              type="number"
+              id="modal-price"
+              min="0"
+              step="0.01"
+              value="0"
+              class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-3 text-base text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+            />
+          </div>
+        </div>
+
+        <!-- Tipo: Mão de obra ou Inclui material -->
+        <div>
+          <span class="block text-sm font-semibold text-ardosia-800 mb-1.5">Material / Mão de Obra</span>
+          <div class="grid grid-cols-2 gap-2.5">
+            <label class="flex items-center gap-2 p-3 rounded-xl border border-slate-300 bg-slate-50 cursor-pointer has-[:checked]:border-obra-500 has-[:checked]:bg-obra-50">
+              <input type="radio" name="modal-material" value="mao_de_obra" checked class="accent-obra-600 w-4 h-4" />
+              <span class="text-sm font-semibold text-ardosia-900">Apenas Mão de Obra</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 rounded-xl border border-slate-300 bg-slate-50 cursor-pointer has-[:checked]:border-obra-500 has-[:checked]:bg-obra-50">
+              <input type="radio" name="modal-material" value="inclui_material" class="accent-obra-600 w-4 h-4" />
+              <span class="text-sm font-semibold text-ardosia-900">Inclui Material</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="pt-2 flex gap-2.5">
+          <button
+            type="button"
+            id="btn-cancel-modal"
+            class="flex-1 py-3.5 px-4 rounded-xl border border-slate-300 text-ardosia-800 font-bold text-sm hover:bg-slate-50 transition"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            id="btn-submit-modal"
+            class="flex-1 py-3.5 px-4 rounded-xl bg-obra-500 hover:bg-obra-600 text-white font-bold text-sm shadow transition"
+          >
+            Adicionar ao Orçamento
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MODAL DE CONFIRMAÇÃO CUSTOMIZADO (Substitui confirm())
+  ========================================================== -->
+  <div
+    id="confirm-modal"
+    class="no-print fixed inset-0 z-50 bg-ardosia-900/70 hidden items-center justify-center p-4"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-4">
+      <h3 id="confirm-title" class="text-lg font-extrabold text-ardosia-900">Confirmar ação</h3>
+      <p id="confirm-message" class="text-sm text-slate-600 leading-relaxed">Tem certeza?</p>
+      <div class="flex gap-2.5 pt-1">
+        <button
+          type="button"
+          id="btn-confirm-cancel"
+          class="flex-1 py-3 px-4 rounded-xl border border-slate-300 text-ardosia-800 font-bold text-sm hover:bg-slate-50"
+        >
+          Voltar
+        </button>
+        <button
+          type="button"
+          id="btn-confirm-ok"
+          class="flex-1 py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow"
+        >
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       LÓGICA DO APLICATIVO (JAVASCRIPT)
+  ========================================================== -->
+  <script>
+    (function () {
+      'use strict';
+
+      // Chaves de armazenamento no localStorage
+      const STORAGE_KEYS = {
+        PROFILE: 'orcaobra_pro_profile_v1',
+        CATALOG: 'orcaobra_service_catalog_v1',
+        CURRENT_BUDGET: 'orcaobra_current_budget_v1',
+        HISTORY: 'orcaobra_budget_history_v1',
+        COUNTER: 'orcaobra_budget_counter_v1'
+      };
+
+      const CATEGORIES = ['Todos', 'Civil', 'Elétrica', 'Hidráulica', 'Reformas em Geral'];
+
+      // Catálogo inicial pré-cadastrado para construção civil, elétrica, hidráulica e reformas
+      const DEFAULT_CATALOG = [
+        // Civil
+        { id: 'c1', category: 'Civil', description: 'Alvenaria de vedação (bloco cerâmico/concreto)', unit: 'm²', defaultPrice: 55, materialMode: 'mao_de_obra' },
+        { id: 'c2', category: 'Civil', description: 'Reboco / emboço interno ou externo', unit: 'm²', defaultPrice: 38, materialMode: 'mao_de_obra' },
+        { id: 'c3', category: 'Civil', description: 'Execução de contrapiso nivelado', unit: 'm²', defaultPrice: 35, materialMode: 'mao_de_obra' },
+        { id: 'c4', category: 'Civil', description: 'Assentamento de piso cerâmico ou porcelanato', unit: 'm²', defaultPrice: 50, materialMode: 'mao_de_obra' },
+        { id: 'c5', category: 'Civil', description: 'Demolição e remoção de parede/piso/entulho', unit: 'm²', defaultPrice: 32, materialMode: 'mao_de_obra' },
+
+        // Elétrica
+        { id: 'e1', category: 'Elétrica', description: 'Ponto de tomada ou interruptor (fiação e caixa)', unit: 'un', defaultPrice: 85, materialMode: 'mao_de_obra' },
+        { id: 'e2', category: 'Elétrica', description: 'Montagem / revisão de quadro de disjuntores', unit: 'un', defaultPrice: 280, materialMode: 'mao_de_obra' },
+        { id: 'e3', category: 'Elétrica', description: 'Instalação de luminária, plafon ou ventilador', unit: 'un', defaultPrice: 70, materialMode: 'mao_de_obra' },
+        { id: 'e4', category: 'Elétrica', description: 'Instalação de chuveiro elétrico (com teste de carga)', unit: 'un', defaultPrice: 95, materialMode: 'mao_de_obra' },
+
+        // Hidráulica
+        { id: 'h1', category: 'Hidráulica', description: 'Ponto de água fria/quente ou esgoto', unit: 'un', defaultPrice: 120, materialMode: 'mao_de_obra' },
+        { id: 'h2', category: 'Hidráulica', description: 'Troca de registro de gaveta/pressão ou torneira', unit: 'un', defaultPrice: 90, materialMode: 'mao_de_obra' },
+        { id: 'h3', category: 'Hidráulica', description: 'Instalação de vaso sanitário, cuba ou tanque', unit: 'un', defaultPrice: 150, materialMode: 'mao_de_obra' },
+        { id: 'h4', category: 'Hidráulica', description: 'Instalação / limpeza de caixa d\'água', unit: 'un', defaultPrice: 220, materialMode: 'mao_de_obra' },
+
+        // Reformas em Geral
+        { id: 'r1', category: 'Reformas em Geral', description: 'Pintura de parede / teto (massa, selador e tinta)', unit: 'm²', defaultPrice: 28, materialMode: 'mao_de_obra' },
+        { id: 'r2', category: 'Reformas em Geral', description: 'Impermeabilização de laje, área molhada ou baldrame', unit: 'm²', defaultPrice: 48, materialMode: 'mao_de_obra' },
+        { id: 'r3', category: 'Reformas em Geral', description: 'Colocação de porta, batente ou janela', unit: 'un', defaultPrice: 180, materialMode: 'mao_de_obra' },
+        { id: 'r4', category: 'Reformas em Geral', description: 'Mão de obra por diária de ajudante / pedreiro', unit: 'dia', defaultPrice: 200, materialMode: 'mao_de_obra' }
+      ];
+
+      // Estado da aplicação
+      let state = {
+        activeTab: 'obra',
+        selectedCategory: 'Todos',
+        catalogSearch: '',
+        historySearch: '',
+        historyStatusFilter: 'todos',
+        catalogEditMode: false,
+        profile: {
+          name: '',
+          phone: '',
+          doc: '',
+          specialty: 'Construção Civil, Elétrica, Hidráulica e Reformas',
+          city: '',
+          pix: ''
+        },
+        catalog: [],
+        budget: null,
+        history: [],
+        counter: 1
+      };
+
+      // Criar estrutura de orçamento em branco
+      function createBlankBudget(number) {
+        return {
+          id: 'orc_' + Date.now(),
+          number: number || 1,
+          status: 'pendente',
+          createdAt: new Date().toISOString(),
+          clientName: '',
+          clientPhone: '',
+          validity: '15 dias',
+          siteAddress: '',
+          siteDescription: '',
+          estimatedDeadline: '',
+          serviceWarranty: '90 dias na mão de obra',
+          materialsList: '',
+          discountType: 'none',
+          discountValue: 0,
+          paymentTerms: '50% de entrada para início da obra e 50% na entrega/conclusão dos serviços.',
+          items: []
+        };
+      }
+
+      // Formatar moeda em Real Brasileiro (R$)
+      function formatBRL(value) {
+        const num = Number(value) || 0;
+        return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      }
+
+      // Escapar HTML para evitar XSS em textos digitados pelo usuário
+      function escapeHTML(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      // Exibir notificação Toast temporária
+      let toastTimer = null;
+      function showToast(message) {
+        const banner = document.getElementById('toast-banner');
+        const msgEl = document.getElementById('toast-message');
+        if (!banner || !msgEl) return;
+
+        msgEl.textContent = message;
+        banner.classList.remove('opacity-0', '-translate-y-2', 'pointer-events-none');
+        banner.classList.add('opacity-100', 'translate-y-0');
+
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          banner.classList.add('opacity-0', '-translate-y-2', 'pointer-events-none');
+          banner.classList.remove('opacity-100', 'translate-y-0');
+        }, 2800);
+      }
+
+      // Modal de confirmação customizado (substitui confirm())
+      function askConfirmation(title, message) {
+        return new Promise((resolve) => {
+          const modal = document.getElementById('confirm-modal');
+          document.getElementById('confirm-title').textContent = title;
+          document.getElementById('confirm-message').textContent = message;
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+
+          const btnOk = document.getElementById('btn-confirm-ok');
+          const btnCancel = document.getElementById('btn-confirm-cancel');
+
+          const cleanup = (result) => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            btnOk.removeEventListener('click', onOk);
+            btnCancel.removeEventListener('click', onCancel);
+            resolve(result);
+          };
+
+          const onOk = () => cleanup(true);
+          const onCancel = () => cleanup(false);
+
+          btnOk.addEventListener('click', onOk);
+          btnCancel.addEventListener('click', onCancel);
+        });
+      }
+
+      // Carregar dados salvos do localStorage
+      function loadState() {
+        try {
+          const savedProfile = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROFILE));
+          if (savedProfile) state.profile = { ...state.profile, ...savedProfile };
+
+          const savedCatalog = JSON.parse(localStorage.getItem(STORAGE_KEYS.CATALOG));
+          state.catalog = Array.isArray(savedCatalog) && savedCatalog.length > 0
+            ? savedCatalog
+            : [...DEFAULT_CATALOG];
+
+          const savedCounter = parseInt(localStorage.getItem(STORAGE_KEYS.COUNTER), 10);
+          state.counter = !isNaN(savedCounter) && savedCounter > 0 ? savedCounter : 1;
+
+          const savedBudget = JSON.parse(localStorage.getItem(STORAGE_KEYS.CURRENT_BUDGET));
+          state.budget = savedBudget && typeof savedBudget === 'object'
+            ? savedBudget
+            : createBlankBudget(state.counter);
+
+          const savedHistory = JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY));
+          state.history = Array.isArray(savedHistory) ? savedHistory : [];
+        } catch (err) {
+          console.error('Erro ao carregar dados locais:', err);
+          state.catalog = [...DEFAULT_CATALOG];
+          state.budget = createBlankBudget(1);
+          state.history = [];
+        }
+      }
+
+      // Persistir orçamento atual no localStorage
+      function saveCurrentBudget() {
+        try {
+          localStorage.setItem(STORAGE_KEYS.CURRENT_BUDGET, JSON.stringify(state.budget));
+        } catch (err) {
+          console.error('Erro ao salvar orçamento atual:', err);
+        }
+      }
+
+      // Persistir catálogo no localStorage
+      function saveCatalog() {
+        try {
+          localStorage.setItem(STORAGE_KEYS.CATALOG, JSON.stringify(state.catalog));
+        } catch (err) {
+          console.error('Erro ao salvar catálogo:', err);
+        }
+      }
+
+      // Persistir histórico no localStorage
+      function saveHistoryStorage() {
+        try {
+          localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(state.history));
+        } catch (err) {
+          console.error('Erro ao salvar histórico:', err);
+        }
+      }
+
+      // Calcular subtotal, desconto e total do orçamento
+      function calculateTotals() {
+        const items = Array.isArray(state.budget.items) ? state.budget.items : [];
+        const subtotal = items.reduce((acc, item) => {
+          const qty = Number(item.qty) || 0;
+          const price = Number(item.unitPrice) || 0;
+          return acc + qty * price;
+        }, 0);
+
+        let discountAmount = 0;
+        const dVal = Number(state.budget.discountValue) || 0;
+        if (state.budget.discountType === 'amount' && dVal > 0) {
+          discountAmount = Math.min(subtotal, dVal);
+        } else if (state.budget.discountType === 'percent' && dVal > 0) {
+          discountAmount = Math.min(subtotal, subtotal * (dVal / 100));
+        }
+
+        const total = Math.max(0, subtotal - discountAmount);
+        return { subtotal, discountAmount, total };
+      }
+
+      // Sincronizar campos do formulário com o estado
+      function populateInputsFromState() {
+        document.getElementById('pro-name').value = state.profile.name || '';
+        document.getElementById('pro-phone').value = state.profile.phone || '';
+        document.getElementById('pro-doc').value = state.profile.doc || '';
+        document.getElementById('pro-specialty').value = state.profile.specialty || '';
+        document.getElementById('pro-city').value = state.profile.city || '';
+        document.getElementById('pro-pix').value = state.profile.pix || '';
+
+        document.getElementById('client-name').value = state.budget.clientName || '';
+        document.getElementById('client-phone').value = state.budget.clientPhone || '';
+        document.getElementById('budget-validity').value = state.budget.validity || '15 dias';
+        document.getElementById('site-address').value = state.budget.siteAddress || '';
+        document.getElementById('site-description').value = state.budget.siteDescription || '';
+        document.getElementById('estimated-deadline').value = state.budget.estimatedDeadline || '';
+        document.getElementById('service-warranty').value = state.budget.serviceWarranty || '';
+        document.getElementById('materials-list').value = state.budget.materialsList || '';
+
+        document.getElementById('discount-type').value = state.budget.discountType || 'none';
+        const discInput = document.getElementById('discount-value');
+        discInput.disabled = state.budget.discountType === 'none';
+        discInput.value = state.budget.discountValue ? state.budget.discountValue : '';
+
+        document.getElementById('payment-terms').value = state.budget.paymentTerms || '';
+      }
+
+      // Alternar entre as 4 abas
+      function switchTab(tabName) {
+        state.activeTab = tabName;
+        document.querySelectorAll('.tab-panel').forEach((panel) => {
+          panel.classList.add('hidden');
+        });
+        const activePanel = document.getElementById('tab-' + tabName);
+        if (activePanel) activePanel.classList.remove('hidden');
+
+        document.querySelectorAll('.nav-tab-btn').forEach((btn) => {
+          const isTarget = btn.getAttribute('data-tab') === tabName;
+          btn.classList.toggle('text-obra-600', isTarget);
+          btn.classList.toggle('font-bold', isTarget);
+          btn.classList.toggle('text-slate-500', !isTarget);
+          btn.classList.toggle('font-semibold', !isTarget);
+        });
+
+        if (tabName === 'resumo') {
+          renderSummary();
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // Renderizar cabeçalho superior e badges
+      function renderHeaderAndBadges() {
+        const appTitleEl = document.getElementById('header-app-title');
+        const subtitle = document.getElementById('header-pro-subtitle');
+        const companyName = (state.profile.name || '').trim();
+
+        appTitleEl.textContent = companyName || 'OrçaObra';
+        document.title = companyName
+          ? `${companyName} — Orçamentos de Construção e Reformas`
+          : 'OrçaObra — Orçamentos de Construção e Reformas';
+
+        const subParts = [];
+        if (state.profile.phone) subParts.push(state.profile.phone);
+        if (state.profile.specialty) subParts.push(state.profile.specialty);
+        subtitle.textContent =
+          subParts.length > 0
+            ? subParts.join(' • ')
+            : 'Toque em Editar para colocar sua empresa e telefone';
+
+        const budgetNumStr = String(state.budget.number || 1).padStart(2, '0');
+        document.getElementById('budget-number-badge').textContent = `Orçamento #${budgetNumStr}`;
+
+        const count = state.budget.items.length;
+        const { subtotal, discountAmount, total } = calculateTotals();
+
+        document.getElementById('quick-total-obra').textContent = formatBRL(total);
+        document.getElementById('quick-count-obra').textContent = `${count} serviço(s) adicionado(s)`;
+        document.getElementById('items-count-badge').textContent = String(count);
+
+        const navBadge = document.getElementById('nav-items-badge');
+        if (count > 0) {
+          navBadge.textContent = String(count);
+          navBadge.classList.remove('hidden');
+        } else {
+          navBadge.classList.add('hidden');
+        }
+
+        document.getElementById('srv-subtotal').textContent = formatBRL(subtotal);
+        const srvDiscRow = document.getElementById('srv-discount-row');
+        if (discountAmount > 0) {
+          srvDiscRow.classList.remove('hidden');
+          document.getElementById('srv-discount').textContent = `- ${formatBRL(discountAmount)}`;
+        } else {
+          srvDiscRow.classList.add('hidden');
+        }
+        document.getElementById('srv-total').textContent = formatBRL(total);
+      }
+
+      // Renderizar itens adicionados ao orçamento atual
+      function renderBudgetItems() {
+        const container = document.getElementById('budget-items-list');
+        const items = state.budget.items;
+
+        if (!items || items.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-6 px-4 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+              <p class="text-sm font-semibold text-slate-700">Nenhum serviço adicionado ainda</p>
+              <p class="text-xs text-slate-500 mt-1">Escolha um serviço no catálogo abaixo com 1 toque ou crie um item personalizado.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = items
+          .map((item) => {
+            const lineTotal = (Number(item.qty) || 0) * (Number(item.unitPrice) || 0);
+            const matBadge =
+              item.materialMode === 'inclui_material'
+                ? `<button type="button" data-action="toggle-material" data-id="${escapeHTML(item.id)}" class="text-[11px] font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full transition" title="Toque para alternar">Inclui material ↻</button>`
+                : `<button type="button" data-action="toggle-material" data-id="${escapeHTML(item.id)}" class="text-[11px] font-semibold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full transition" title="Toque para alternar">Só mão de obra ↻</button>`;
+
+            return `
+              <div class="rounded-xl border border-ardosia-200 bg-slate-50/70 p-3.5 space-y-2.5" data-item-id="${escapeHTML(item.id)}">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="space-y-1">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span class="text-[11px] font-bold uppercase tracking-wide bg-ardosia-800 text-white px-2 py-0.5 rounded-md">${escapeHTML(item.category)}</span>
+                      ${matBadge}
+                    </div>
+                    <p class="text-sm font-bold text-ardosia-900 leading-snug">${escapeHTML(item.description)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    data-action="remove-item"
+                    data-id="${escapeHTML(item.id)}"
+                    class="text-slate-400 hover:text-red-600 p-1.5 rounded-lg transition shrink-0"
+                    title="Remover serviço"
+                    aria-label="Remover serviço"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div class="grid grid-cols-12 gap-2 items-end pt-1">
+                  <div class="col-span-4">
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Qtd (${escapeHTML(item.unit)})</label>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value="${item.qty}"
+                      data-action="update-qty"
+                      data-id="${escapeHTML(item.id)}"
+                      class="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm font-bold text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+                    />
+                  </div>
+                  <div class="col-span-4">
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Unit. (R$)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value="${item.unitPrice}"
+                      data-action="update-price"
+                      data-id="${escapeHTML(item.id)}"
+                      class="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm font-bold text-ardosia-900 focus:outline-none focus:ring-2 focus:ring-obra-500"
+                    />
+                  </div>
+                  <div class="col-span-4 text-right pb-1">
+                    <span class="block text-[11px] text-slate-500">Subtotal</span>
+                    <span class="text-sm font-extrabold text-obra-600">${formatBRL(lineTotal)}</span>
+                  </div>
+                </div>
+              </div>
+            `;
+          })
+          .join('');
+      }
+
+      // Renderizar filtros e lista do catálogo de serviços
+      function renderCatalog() {
+        const filterBar = document.getElementById('category-filter-bar');
+        filterBar.innerHTML = CATEGORIES.map((cat) => {
+          const active = state.selectedCategory === cat;
+          return `
+            <button
+              type="button"
+              data-filter-cat="${escapeHTML(cat)}"
+              class="shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold transition ${
+                active
+                  ? 'bg-obra-500 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }"
+            >
+              ${escapeHTML(cat)}
+            </button>
+          `;
+        }).join('');
+
+        const editBtn = document.getElementById('btn-toggle-catalog-edit');
+        editBtn.textContent = state.catalogEditMode ? 'Concluir Edição' : 'Editar Catálogo';
+        editBtn.classList.toggle('bg-ardosia-900', state.catalogEditMode);
+        editBtn.classList.toggle('text-white', state.catalogEditMode);
+
+        const searchTerm = (state.catalogSearch || '').trim().toLowerCase();
+        const filtered = state.catalog.filter((c) => {
+          const matchesCat = state.selectedCategory === 'Todos' || c.category === state.selectedCategory;
+          const matchesSearch =
+            !searchTerm ||
+            c.description.toLowerCase().includes(searchTerm) ||
+            c.category.toLowerCase().includes(searchTerm);
+          return matchesCat && matchesSearch;
+        });
+
+        const catalogList = document.getElementById('catalog-list');
+        let html = '';
+
+        if (state.catalogEditMode) {
+          html += `
+            <button
+              type="button"
+              id="btn-add-catalog-item"
+              class="w-full py-3 px-4 rounded-xl border-2 border-dashed border-obra-500 text-obra-600 font-bold text-sm hover:bg-obra-50 transition mb-2"
+            >
+              + Novo Serviço Padrão no Catálogo
+            </button>
+          `;
+        }
+
+        html += filtered
+          .map((srv) => {
+            if (state.catalogEditMode) {
+              return `
+                <div class="flex items-center justify-between gap-2 p-3 rounded-xl border border-slate-200 bg-slate-50">
+                  <div class="min-w-0">
+                    <span class="text-[10px] font-bold uppercase text-obra-600">${escapeHTML(srv.category)}</span>
+                    <p class="text-sm font-semibold text-ardosia-900 truncate">${escapeHTML(srv.description)}</p>
+                    <p class="text-xs text-slate-500">${formatBRL(srv.defaultPrice)} / ${escapeHTML(srv.unit)}</p>
+                  </div>
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      data-cat-action="edit"
+                      data-id="${escapeHTML(srv.id)}"
+                      class="px-2.5 py-2 rounded-lg bg-white border border-slate-300 text-xs font-bold text-ardosia-800 hover:bg-slate-100"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      data-cat-action="delete"
+                      data-id="${escapeHTML(srv.id)}"
+                      class="px-2.5 py-2 rounded-lg bg-red-50 border border-red-200 text-xs font-bold text-red-700 hover:bg-red-100"
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                </div>
+              `;
+            }
+
+            return `
+              <button
+                type="button"
+                data-cat-action="add-to-budget"
+                data-id="${escapeHTML(srv.id)}"
+                class="w-full text-left flex items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-200 hover:border-obra-500 hover:bg-obra-50/40 active:scale-[0.99] transition bg-white"
+              >
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5 mb-0.5">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-obra-600">${escapeHTML(srv.category)}</span>
+                    <span class="text-[10px] text-slate-400">• ${srv.materialMode === 'inclui_material' ? 'Com material' : 'Mão de obra'}</span>
+                  </div>
+                  <p class="text-sm font-semibold text-ardosia-900 leading-snug">${escapeHTML(srv.description)}</p>
+                </div>
+                <div class="text-right shrink-0 flex items-center gap-2.5">
+                  <div>
+                    <span class="block text-sm font-extrabold text-ardosia-900">${formatBRL(srv.defaultPrice)}</span>
+                    <span class="block text-[11px] text-slate-500">por ${escapeHTML(srv.unit)}</span>
+                  </div>
+                  <span class="w-8 h-8 rounded-lg bg-obra-500 text-white font-bold flex items-center justify-center text-lg shadow-xs">+</span>
+                </div>
+              </button>
+            `;
+          })
+          .join('');
+
+        catalogList.innerHTML = html;
+      }
+
+      // Gerar texto formatado para WhatsApp
+      function buildWhatsAppText() {
+        const { subtotal, discountAmount, total } = calculateTotals();
+        const proName = (state.profile.name || '').trim() || 'Minha Empresa de Reformas';
+        const lines = [];
+
+        lines.push(`*${proName.toUpperCase()}*`);
+        if (state.profile.specialty) lines.push(`_${state.profile.specialty}_`);
+        if (state.profile.phone) lines.push(`*Tel / WhatsApp:* ${state.profile.phone}`);
+        if (state.profile.doc) lines.push(`*CPF/CNPJ:* ${state.profile.doc}`);
+        lines.push(`*ORÇAMENTO #${String(state.budget.number || 1).padStart(2, '0')}*`);
+        lines.push('');
+
+        if (state.budget.clientName) lines.push(`*Cliente:* ${state.budget.clientName}`);
+        if (state.budget.clientPhone) lines.push(`*Telefone:* ${state.budget.clientPhone}`);
+        if (state.budget.siteAddress) lines.push(`*Local da Obra:* ${state.budget.siteAddress}`);
+        if (state.budget.siteDescription) lines.push(`*Serviço:* ${state.budget.siteDescription}`);
+        if (state.budget.estimatedDeadline) lines.push(`*Prazo Estimado:* ${state.budget.estimatedDeadline}`);
+        if (state.budget.serviceWarranty) lines.push(`*Garantia:* ${state.budget.serviceWarranty}`);
+        lines.push(`*Validade:* ${state.budget.validity || '15 dias'}`);
+        lines.push('');
+        lines.push('*ITENS DO ORÇAMENTO:*');
+
+        if (state.budget.items.length === 0) {
+          lines.push('• Nenhum serviço adicionado.');
+        } else {
+          state.budget.items.forEach((item, idx) => {
+            const itemTotal = (Number(item.qty) || 0) * (Number(item.unitPrice) || 0);
+            const matInfo = item.materialMode === 'inclui_material' ? 'c/ material' : 'mão de obra';
+            lines.push(
+              `${idx + 1}. *${item.description}* (${item.category} - ${matInfo})\n   ${item.qty} ${item.unit} x ${formatBRL(item.unitPrice)} = *${formatBRL(itemTotal)}*`
+            );
+          });
+        }
+
+        lines.push('');
+        lines.push(`*Subtotal:* ${formatBRL(subtotal)}`);
+        if (discountAmount > 0) {
+          lines.push(`*Desconto:* - ${formatBRL(discountAmount)}`);
+        }
+        lines.push(`*VALOR TOTAL:* *${formatBRL(total)}*`);
+
+        if (state.budget.paymentTerms) {
+          lines.push('');
+          lines.push(`*Condição de Pagamento:*\n${state.budget.paymentTerms}`);
+        }
+        if ((state.profile.pix || '').trim()) {
+          lines.push(`*Chave PIX:* ${state.profile.pix.trim()}`);
+        }
+        if ((state.budget.materialsList || '').trim()) {
+          lines.push('');
+          lines.push(`*Materiais Sugeridos (por conta do cliente):*\n${state.budget.materialsList.trim()}`);
+        }
+
+        return lines.join('\n');
+      }
+
+      // Renderizar aba Resumo / Prévia
+      function renderSummary() {
+        const { subtotal, discountAmount, total } = calculateTotals();
+        const dateFormatted = state.budget.createdAt
+          ? new Date(state.budget.createdAt).toLocaleDateString('pt-BR')
+          : new Date().toLocaleDateString('pt-BR');
+
+        const companyName = (state.profile.name || '').trim() || 'Minha Empresa de Reformas';
+        document.getElementById('prev-pro-name').textContent = companyName;
+        document.getElementById('prev-pro-specialty').textContent =
+          state.profile.specialty || 'Construção Civil, Elétrica, Hidráulica e Reformas';
+
+        const phoneValEl = document.getElementById('prev-pro-phone-value');
+        phoneValEl.textContent = (state.profile.phone || '').trim() || 'Configure seu telefone na aba Perfil';
+
+        const docEl = document.getElementById('prev-pro-doc-display');
+        if ((state.profile.doc || '').trim()) {
+          docEl.textContent = `CPF/CNPJ: ${state.profile.doc.trim()}`;
+          docEl.classList.remove('hidden');
+        } else {
+          docEl.classList.add('hidden');
+        }
+
+        const cityEl = document.getElementById('prev-pro-city-display');
+        if ((state.profile.city || '').trim()) {
+          cityEl.textContent = state.profile.city.trim();
+          cityEl.classList.remove('hidden');
+        } else {
+          cityEl.classList.add('hidden');
+        }
+
+        document.getElementById('prev-budget-code').textContent = `ORÇAMENTO #${String(state.budget.number || 1).padStart(2, '0')}`;
+        document.getElementById('prev-budget-date').textContent = `Data: ${dateFormatted}`;
+        document.getElementById('prev-budget-validity').textContent = `Validade: ${state.budget.validity || '15 dias'}`;
+
+        document.getElementById('prev-client-name').textContent = state.budget.clientName || 'Não informado';
+        document.getElementById('prev-client-phone').textContent = state.budget.clientPhone || 'Não informado';
+        document.getElementById('prev-site-address').textContent = state.budget.siteAddress || 'Não informado';
+
+        const descRow = document.getElementById('prev-site-desc-row');
+        if (state.budget.siteDescription) {
+          descRow.classList.remove('hidden');
+          document.getElementById('prev-site-desc').textContent = state.budget.siteDescription;
+        } else {
+          descRow.classList.add('hidden');
+        }
+
+        const dwRow = document.getElementById('prev-deadline-warranty-row');
+        const deadlineEl = document.getElementById('prev-deadline-badge');
+        const warrantyEl = document.getElementById('prev-warranty-badge');
+        const hasDeadline = Boolean((state.budget.estimatedDeadline || '').trim());
+        const hasWarranty = Boolean((state.budget.serviceWarranty || '').trim());
+        if (hasDeadline || hasWarranty) {
+          dwRow.classList.remove('hidden');
+          if (hasDeadline) {
+            deadlineEl.textContent = `Prazo estimado: ${state.budget.estimatedDeadline.trim()}`;
+            deadlineEl.classList.remove('hidden');
+          } else {
+            deadlineEl.classList.add('hidden');
+          }
+          if (hasWarranty) {
+            warrantyEl.textContent = `Garantia: ${state.budget.serviceWarranty.trim()}`;
+            warrantyEl.classList.remove('hidden');
+          } else {
+            warrantyEl.classList.add('hidden');
+          }
+        } else {
+          dwRow.classList.add('hidden');
+        }
+
+        const prevItemsContainer = document.getElementById('prev-items-container');
+        if (state.budget.items.length === 0) {
+          prevItemsContainer.innerHTML = `<p class="p-4 text-sm text-slate-500 text-center">Nenhum serviço adicionado ao orçamento.</p>`;
+        } else {
+          prevItemsContainer.innerHTML = state.budget.items
+            .map((item) => {
+              const lineTotal = (Number(item.qty) || 0) * (Number(item.unitPrice) || 0);
+              const matLabel = item.materialMode === 'inclui_material' ? 'Inclui material' : 'Mão de obra';
+              return `
+                <div class="p-3.5 flex items-start justify-between gap-3 bg-white">
+                  <div class="space-y-0.5">
+                    <p class="text-sm font-bold text-ardosia-900">${escapeHTML(item.description)}</p>
+                    <p class="text-xs text-slate-500">
+                      ${escapeHTML(item.category)} • ${matLabel} • ${item.qty} ${escapeHTML(item.unit)} × ${formatBRL(item.unitPrice)}
+                    </p>
+                  </div>
+                  <p class="text-sm font-extrabold text-ardosia-900 shrink-0">${formatBRL(lineTotal)}</p>
+                </div>
+              `;
+            })
+            .join('');
+        }
+
+        document.getElementById('prev-subtotal').textContent = formatBRL(subtotal);
+        const prevDiscRow = document.getElementById('prev-discount-row');
+        if (discountAmount > 0) {
+          prevDiscRow.classList.remove('hidden');
+          const labelSuffix =
+            state.budget.discountType === 'percent' ? ` (${state.budget.discountValue}%)` : '';
+          document.getElementById('prev-discount-label').textContent = `Desconto${labelSuffix}`;
+          document.getElementById('prev-discount-val').textContent = `- ${formatBRL(discountAmount)}`;
+        } else {
+          prevDiscRow.classList.add('hidden');
+        }
+        document.getElementById('prev-total').textContent = formatBRL(total);
+        document.getElementById('prev-payment-terms').textContent =
+          state.budget.paymentTerms || 'A combinar';
+
+        const pixBox = document.getElementById('prev-pix-box');
+        if ((state.profile.pix || '').trim()) {
+          pixBox.classList.remove('hidden');
+          document.getElementById('prev-pix-value').textContent = state.profile.pix.trim();
+        } else {
+          pixBox.classList.add('hidden');
+        }
+
+        const matBox = document.getElementById('prev-materials-box');
+        if ((state.budget.materialsList || '').trim()) {
+          matBox.classList.remove('hidden');
+          document.getElementById('prev-materials-text').textContent = state.budget.materialsList.trim();
+        } else {
+          matBox.classList.add('hidden');
+        }
+
+        document.getElementById('whatsapp-preview-text').textContent = buildWhatsAppText();
+      }
+
+      // Renderizar histórico de orçamentos salvos
+      function renderHistory() {
+        const countEl = document.getElementById('history-count');
+        const listEl = document.getElementById('history-list');
+        const clearAllBtn = document.getElementById('btn-clear-all-history');
+        const filtersBar = document.getElementById('history-filters-bar');
+        countEl.textContent = String(state.history.length);
+
+        if (clearAllBtn) {
+          clearAllBtn.classList.toggle('hidden', state.history.length === 0);
+        }
+        if (filtersBar) {
+          filtersBar.classList.toggle('hidden', state.history.length === 0);
+        }
+
+        if (state.history.length === 0) {
+          listEl.innerHTML = `
+            <div class="text-center py-6 px-4 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+              <p class="text-sm font-semibold text-slate-700">Nenhum orçamento salvo ainda</p>
+              <p class="text-xs text-slate-500 mt-1">Salve seus orçamentos para reabrir, duplicar ou consultar valores depois.</p>
+            </div>
+          `;
+          return;
+        }
+
+        const query = (state.historySearch || '').trim().toLowerCase();
+        const statusFilter = state.historyStatusFilter || 'todos';
+        const filteredHistory = state.history.filter((entry) => {
+          const entryStatus = entry.status || 'pendente';
+          const matchesStatus = statusFilter === 'todos' || entryStatus === statusFilter;
+          const matchesQuery =
+            !query ||
+            (entry.clientName || '').toLowerCase().includes(query) ||
+            (entry.siteAddress || '').toLowerCase().includes(query);
+          return matchesStatus && matchesQuery;
+        });
+
+        if (filteredHistory.length === 0) {
+          listEl.innerHTML = `<p class="text-center text-xs text-slate-500 py-5">Nenhum orçamento encontrado para esse filtro.</p>`;
+          return;
+        }
+
+        const statusStyles = {
+          pendente: 'bg-amber-100 text-amber-800 border-amber-200',
+          aprovado: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+          recusado: 'bg-rose-100 text-rose-800 border-rose-200'
+        };
+
+        listEl.innerHTML = filteredHistory
+          .map((entry) => {
+            const dateStr = new Date(entry.savedAt || entry.createdAt).toLocaleDateString('pt-BR');
+            const st = entry.status || 'pendente';
+            const badgeClass = statusStyles[st] || statusStyles.pendente;
+            return `
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-2.5">
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span class="text-xs font-extrabold text-obra-600">#${String(entry.number || 1).padStart(2, '0')}</span>
+                      <span class="text-xs text-slate-400">• ${dateStr}</span>
+                      <select
+                        data-hist-status="${escapeHTML(entry.id)}"
+                        aria-label="Status do orçamento"
+                        class="text-[11px] font-bold rounded-full border px-2 py-0.5 cursor-pointer ${badgeClass}"
+                      >
+                        <option value="pendente" ${st === 'pendente' ? 'selected' : ''}>Pendente</option>
+                        <option value="aprovado" ${st === 'aprovado' ? 'selected' : ''}>Aprovado</option>
+                        <option value="recusado" ${st === 'recusado' ? 'selected' : ''}>Recusado</option>
+                      </select>
+                    </div>
+                    <p class="text-sm font-bold text-ardosia-900 mt-1">${escapeHTML(entry.clientName || 'Cliente sem nome')}</p>
+                    <p class="text-xs text-slate-500 truncate max-w-[230px]">${escapeHTML(entry.siteAddress || 'Sem endereço')}</p>
+                  </div>
+                  <div class="text-right">
+                    <span class="block text-sm font-extrabold text-ardosia-900">${formatBRL(entry.totalCached || 0)}</span>
+                    <span class="block text-[11px] text-slate-500">${(entry.items || []).length} item(ns)</span>
+                  </div>
+                </div>
+                <div class="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    data-hist-action="load"
+                    data-id="${escapeHTML(entry.id)}"
+                    class="flex-1 py-2 px-3 rounded-lg bg-ardosia-900 text-white text-xs font-bold hover:bg-ardosia-800 transition"
+                  >
+                    Abrir / Editar
+                  </button>
+                  <button
+                    type="button"
+                    data-hist-action="duplicate"
+                    data-id="${escapeHTML(entry.id)}"
+                    class="py-2 px-3 rounded-lg bg-white border border-slate-300 text-ardosia-800 text-xs font-bold hover:bg-slate-100 transition"
+                  >
+                    Duplicar
+                  </button>
+                  <button
+                    type="button"
+                    data-hist-action="delete"
+                    data-id="${escapeHTML(entry.id)}"
+                    class="py-2 px-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-bold hover:bg-red-100 transition"
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </div>
+            `;
+          })
+          .join('');
+      }
+
+      // Atualizar toda a interface
+      function renderAll() {
+        renderHeaderAndBadges();
+        renderBudgetItems();
+        renderCatalog();
+        renderSummary();
+        renderHistory();
+      }
+
+      // Salvar orçamento atual no histórico (sem apagar os anteriores)
+      function saveBudgetToHistory() {
+        const { total } = calculateTotals();
+        const snapshot = JSON.parse(JSON.stringify(state.budget));
+        snapshot.savedAt = new Date().toISOString();
+        snapshot.totalCached = total;
+
+        const existingIndex = state.history.findIndex((h) => h.id === snapshot.id);
+        if (existingIndex >= 0) {
+          // Se o orçamento atual já existe no histórico, cria uma nova cópia numerada para não sobrescrever o anterior
+          state.counter += 1;
+          localStorage.setItem(STORAGE_KEYS.COUNTER, String(state.counter));
+          snapshot.id = 'orc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+          snapshot.number = state.counter;
+          state.budget.id = snapshot.id;
+          state.budget.number = snapshot.number;
+          saveCurrentBudget();
+          renderHeaderAndBadges();
+        }
+
+        state.history.unshift(snapshot);
+        saveHistoryStorage();
+        renderHistory();
+        showToast(`Orçamento #${String(snapshot.number).padStart(2, '0')} salvo! Total salvo: ${state.history.length}.`);
+      }
+
+      // Iniciar novo orçamento limpo
+      async function startNewBudget() {
+        if (state.budget.items.length > 0 || state.budget.clientName.trim() !== '') {
+          const ok = await askConfirmation(
+            'Novo Orçamento',
+            'Deseja limpar a tela para iniciar um novo orçamento? (Salve no histórico antes se quiser manter o atual).'
+          );
+          if (!ok) return;
+        }
+        state.counter += 1;
+        localStorage.setItem(STORAGE_KEYS.COUNTER, String(state.counter));
+        state.budget = createBlankBudget(state.counter);
+        saveCurrentBudget();
+        populateInputsFromState();
+        renderAll();
+        switchTab('obra');
+        showToast(`Novo orçamento #${String(state.counter).padStart(2, '0')} iniciado!`);
+      }
+
+      // Copiar texto para área de transferência usando textarea auxiliar + execCommand('copy')
+      function copyWhatsAppToClipboard() {
+        const text = buildWhatsAppText();
+        const tempArea = document.createElement('textarea');
+        tempArea.value = text;
+        tempArea.setAttribute('readonly', '');
+        tempArea.style.position = 'fixed';
+        tempArea.style.left = '-9999px';
+        document.body.appendChild(tempArea);
+        tempArea.select();
+        try {
+          document.execCommand('copy');
+          showToast('Orçamento copiado! Cole no WhatsApp do cliente.');
+        } catch (err) {
+          showToast('Não foi possível copiar automaticamente. Selecione o texto abaixo.');
+        }
+        document.body.removeChild(tempArea);
+      }
+
+      // Abrir WhatsApp direto com mensagem preenchida
+      function openWhatsAppDirect() {
+        const text = encodeURIComponent(buildWhatsAppText());
+        const digits = (state.budget.clientPhone || '').replace(/\D/g, '');
+        let url = `https://wa.me/?text=${text}`;
+        if (digits.length >= 10) {
+          const phoneWithCountry = digits.startsWith('55') ? digits : '55' + digits;
+          url = `https://wa.me/${phoneWithCountry}?text=${text}`;
+        }
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+
+      // Abrir modal de item personalizado ou do catálogo
+      function openItemModal(mode, itemData) {
+        const modal = document.getElementById('item-modal');
+        document.getElementById('modal-mode').value = mode;
+        document.getElementById('modal-edit-id').value = itemData && itemData.id ? itemData.id : '';
+
+        if (mode === 'budget-item') {
+          document.getElementById('modal-title').textContent = 'Novo Serviço Personalizado';
+          document.getElementById('btn-submit-modal').textContent = 'Adicionar ao Orçamento';
+        } else {
+          document.getElementById('modal-title').textContent = itemData
+            ? 'Editar Serviço do Catálogo'
+            : 'Novo Serviço no Catálogo';
+          document.getElementById('btn-submit-modal').textContent = 'Salvar no Catálogo';
+        }
+
+        document.getElementById('modal-category').value = itemData ? itemData.category : 'Civil';
+        document.getElementById('modal-description').value = itemData ? itemData.description : '';
+        document.getElementById('modal-unit').value = itemData ? itemData.unit : 'm²';
+        document.getElementById('modal-qty').value = itemData && itemData.qty ? itemData.qty : 1;
+        document.getElementById('modal-price').value =
+          itemData && itemData.defaultPrice !== undefined ? itemData.defaultPrice : '';
+
+        const matValue = itemData && itemData.materialMode ? itemData.materialMode : 'mao_de_obra';
+        const radio = document.querySelector(`input[name="modal-material"][value="${matValue}"]`);
+        if (radio) radio.checked = true;
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+
+      function closeItemModal() {
+        const modal = document.getElementById('item-modal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+
+      // Vincular todos os eventos da interface
+      function bindEvents() {
+        // Navegação inferior
+        document.querySelectorAll('.nav-tab-btn').forEach((btn) => {
+          btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
+        });
+
+        // Botões internos que mudam de aba
+        document.querySelectorAll('[data-go-tab]').forEach((btn) => {
+          btn.addEventListener('click', () => switchTab(btn.getAttribute('data-go-tab')));
+        });
+
+        // Botão Novo Orçamento no topo
+        document.getElementById('btn-new-budget-top').addEventListener('click', startNewBudget);
+
+        // Atalho no cabeçalho para editar nome da empresa e telefone
+        document.getElementById('btn-quick-edit-brand').addEventListener('click', () => {
+          switchTab('perfil');
+          setTimeout(() => {
+            const nameInput = document.getElementById('pro-name');
+            if (nameInput) nameInput.focus();
+          }, 120);
+        });
+
+        // Salvar Perfil Profissional em tempo real ao digitar e ao clicar no botão
+        const persistProfileFromInputs = () => {
+          state.profile = {
+            name: document.getElementById('pro-name').value,
+            phone: document.getElementById('pro-phone').value,
+            doc: document.getElementById('pro-doc').value,
+            specialty: document.getElementById('pro-specialty').value,
+            city: document.getElementById('pro-city').value,
+            pix: document.getElementById('pro-pix').value
+          };
+          try {
+            localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(state.profile));
+          } catch (err) {
+            console.error('Erro ao salvar perfil:', err);
+          }
+          renderHeaderAndBadges();
+          renderSummary();
+        };
+
+        ['pro-name', 'pro-phone', 'pro-doc', 'pro-specialty', 'pro-city', 'pro-pix'].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.addEventListener('input', persistProfileFromInputs);
+        });
+
+        // Campos de Cliente e Obra (atualizam estado e localStorage na hora)
+        const syncBudgetFields = () => {
+          state.budget.clientName = document.getElementById('client-name').value;
+          state.budget.clientPhone = document.getElementById('client-phone').value;
+          state.budget.validity = document.getElementById('budget-validity').value;
+          state.budget.siteAddress = document.getElementById('site-address').value;
+          state.budget.siteDescription = document.getElementById('site-description').value;
+          state.budget.estimatedDeadline = document.getElementById('estimated-deadline').value;
+          state.budget.serviceWarranty = document.getElementById('service-warranty').value;
+          state.budget.materialsList = document.getElementById('materials-list').value;
+          state.budget.discountType = document.getElementById('discount-type').value;
+
+          const discInput = document.getElementById('discount-value');
+          discInput.disabled = state.budget.discountType === 'none';
+          state.budget.discountValue =
+            state.budget.discountType === 'none' ? 0 : parseFloat(discInput.value) || 0;
+
+          state.budget.paymentTerms = document.getElementById('payment-terms').value;
+
+          saveCurrentBudget();
+          renderHeaderAndBadges();
+        };
+
+        [
+          'client-name',
+          'client-phone',
+          'budget-validity',
+          'site-address',
+          'site-description',
+          'estimated-deadline',
+          'service-warranty',
+          'materials-list',
+          'discount-type',
+          'discount-value',
+          'payment-terms'
+        ].forEach((id) => {
+          const el = document.getElementById(id);
+          el.addEventListener('input', syncBudgetFields);
+          el.addEventListener('change', syncBudgetFields);
+        });
+
+        // Sugestão rápida de condição de pagamento
+        document.getElementById('payment-preset').addEventListener('change', (e) => {
+          if (e.target.value) {
+            document.getElementById('payment-terms').value = e.target.value;
+            syncBudgetFields();
+          }
+        });
+
+        // Salvar Perfil Profissional
+        document.getElementById('btn-save-profile').addEventListener('click', () => {
+          state.profile = {
+            name: document.getElementById('pro-name').value.trim(),
+            phone: document.getElementById('pro-phone').value.trim(),
+            doc: document.getElementById('pro-doc').value.trim(),
+            specialty: document.getElementById('pro-specialty').value.trim(),
+            city: document.getElementById('pro-city').value.trim(),
+            pix: document.getElementById('pro-pix').value.trim()
+          };
+          try {
+            localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(state.profile));
+          } catch (err) {
+            console.error('Erro ao salvar perfil:', err);
+          }
+          renderAll();
+          showToast('Dados da empresa salvos!');
+        });
+
+        // Delegação de eventos na lista de itens do orçamento (quantidade, preço, remover, alternar material)
+        const budgetItemsList = document.getElementById('budget-items-list');
+        budgetItemsList.addEventListener('input', (e) => {
+          const target = e.target;
+          const action = target.getAttribute('data-action');
+          const id = target.getAttribute('data-id');
+          if (!action || !id) return;
+
+          const item = state.budget.items.find((i) => i.id === id);
+          if (!item) return;
+
+          if (action === 'update-qty') {
+            item.qty = Math.max(0, parseFloat(target.value) || 0);
+          } else if (action === 'update-price') {
+            item.unitPrice = Math.max(0, parseFloat(target.value) || 0);
+          }
+
+          saveCurrentBudget();
+          renderHeaderAndBadges();
+
+          const card = target.closest('[data-item-id]');
+          if (card) {
+            const subEl = card.querySelector('.text-obra-600');
+            if (subEl) subEl.textContent = formatBRL(item.qty * item.unitPrice);
+          }
+        });
+
+        budgetItemsList.addEventListener('click', (e) => {
+          const toggleBtn = e.target.closest('[data-action="toggle-material"]');
+          if (toggleBtn) {
+            const id = toggleBtn.getAttribute('data-id');
+            const item = state.budget.items.find((i) => i.id === id);
+            if (item) {
+              item.materialMode = item.materialMode === 'inclui_material' ? 'mao_de_obra' : 'inclui_material';
+              saveCurrentBudget();
+              renderBudgetItems();
+              renderSummary();
+            }
+            return;
+          }
+
+          const btn = e.target.closest('[data-action="remove-item"]');
+          if (!btn) return;
+          const id = btn.getAttribute('data-id');
+          state.budget.items = state.budget.items.filter((i) => i.id !== id);
+          saveCurrentBudget();
+          renderBudgetItems();
+          renderHeaderAndBadges();
+          showToast('Serviço removido do orçamento.');
+        });
+
+        // Busca no catálogo de serviços
+        document.getElementById('catalog-search-input').addEventListener('input', (e) => {
+          state.catalogSearch = e.target.value;
+          renderCatalog();
+        });
+
+        // Filtros de categoria do catálogo
+        document.getElementById('category-filter-bar').addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-filter-cat]');
+          if (!btn) return;
+          state.selectedCategory = btn.getAttribute('data-filter-cat');
+          renderCatalog();
+        });
+
+        // Alternar modo de edição do catálogo
+        document.getElementById('btn-toggle-catalog-edit').addEventListener('click', () => {
+          state.catalogEditMode = !state.catalogEditMode;
+          renderCatalog();
+        });
+
+        // Cliques no catálogo (adicionar com 1 toque ou editar/excluir do catálogo)
+        document.getElementById('catalog-list').addEventListener('click', async (e) => {
+          if (e.target.closest('#btn-add-catalog-item')) {
+            openItemModal('catalog-item', null);
+            return;
+          }
+
+          const actionBtn = e.target.closest('[data-cat-action]');
+          if (!actionBtn) return;
+
+          const action = actionBtn.getAttribute('data-cat-action');
+          const id = actionBtn.getAttribute('data-id');
+          const catItem = state.catalog.find((c) => c.id === id);
+          if (!catItem) return;
+
+          if (action === 'add-to-budget') {
+            state.budget.items.push({
+              id: 'item_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+              category: catItem.category,
+              description: catItem.description,
+              unit: catItem.unit,
+              qty: 1,
+              unitPrice: Number(catItem.defaultPrice) || 0,
+              materialMode: catItem.materialMode || 'mao_de_obra'
+            });
+            saveCurrentBudget();
+            renderBudgetItems();
+            renderHeaderAndBadges();
+            showToast(`"${catItem.description}" adicionado!`);
+          } else if (action === 'edit') {
+            openItemModal('catalog-item', catItem);
+          } else if (action === 'delete') {
+            const ok = await askConfirmation(
+              'Excluir do Catálogo',
+              `Remover "${catItem.description}" do catálogo padrão?`
+            );
+            if (ok) {
+              state.catalog = state.catalog.filter((c) => c.id !== id);
+              saveCatalog();
+              renderCatalog();
+              showToast('Serviço removido do catálogo.');
+            }
+          }
+        });
+
+        // Ações na aba Resumo (WhatsApp Direto, Copiar, PDF, Salvar Histórico)
+        document.getElementById('btn-send-whatsapp-direct').addEventListener('click', openWhatsAppDirect);
+        document.getElementById('btn-copy-whatsapp').addEventListener('click', copyWhatsAppToClipboard);
+        document.getElementById('btn-copy-whatsapp-secondary').addEventListener('click', copyWhatsAppToClipboard);
+        document.getElementById('btn-print-pdf').addEventListener('click', () => window.print());
+        document.getElementById('btn-save-history').addEventListener('click', saveBudgetToHistory);
+        document.getElementById('btn-save-current-from-profile').addEventListener('click', saveBudgetToHistory);
+
+        // Busca e filtro de status no histórico
+        document.getElementById('history-search-input').addEventListener('input', (e) => {
+          state.historySearch = e.target.value;
+          renderHistory();
+        });
+
+        document.getElementById('history-filters-bar').addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-hist-status-filter]');
+          if (!btn) return;
+          state.historyStatusFilter = btn.getAttribute('data-hist-status-filter');
+          document.querySelectorAll('.hist-status-btn').forEach((b) => {
+            const active = b === btn;
+            b.classList.toggle('bg-ardosia-900', active);
+            b.classList.toggle('text-white', active);
+            b.classList.toggle('bg-slate-100', !active);
+            b.classList.toggle('text-slate-700', !active);
+          });
+          renderHistory();
+        });
+
+        document.getElementById('history-list').addEventListener('change', (e) => {
+          const sel = e.target.closest('[data-hist-status]');
+          if (!sel) return;
+          const id = sel.getAttribute('data-hist-status');
+          const entry = state.history.find((h) => h.id === id);
+          if (entry) {
+            entry.status = sel.value;
+            saveHistoryStorage();
+            renderHistory();
+            showToast(`Status atualizado para "${sel.options[sel.selectedIndex].text}".`);
+          }
+        });
+
+        // Abrir modal de item personalizado
+        document.getElementById('btn-open-custom-item').addEventListener('click', () => {
+          openItemModal('budget-item', null);
+        });
+
+        // Fechar modal
+        document.getElementById('btn-close-modal').addEventListener('click', closeItemModal);
+        document.getElementById('btn-cancel-modal').addEventListener('click', closeItemModal);
+
+        // Submeter formulário do modal
+        document.getElementById('item-modal-form').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const mode = document.getElementById('modal-mode').value;
+          const editId = document.getElementById('modal-edit-id').value;
+          const category = document.getElementById('modal-category').value;
+          const description = document.getElementById('modal-description').value.trim();
+          const unit = document.getElementById('modal-unit').value;
+          const qty = Math.max(0.01, parseFloat(document.getElementById('modal-qty').value) || 1);
+          const price = Math.max(0, parseFloat(document.getElementById('modal-price').value) || 0);
+          const matRadio = document.querySelector('input[name="modal-material"]:checked');
+          const materialMode = matRadio ? matRadio.value : 'mao_de_obra';
+
+          if (!description) return;
+
+          if (mode === 'budget-item') {
+            state.budget.items.push({
+              id: 'item_' + Date.now(),
+              category,
+              description,
+              unit,
+              qty,
+              unitPrice: price,
+              materialMode
+            });
+            saveCurrentBudget();
+            renderBudgetItems();
+            renderHeaderAndBadges();
+            showToast('Serviço personalizado adicionado!');
+          } else {
+            if (editId) {
+              const target = state.catalog.find((c) => c.id === editId);
+              if (target) {
+                target.category = category;
+                target.description = description;
+                target.unit = unit;
+                target.defaultPrice = price;
+                target.materialMode = materialMode;
+              }
+            } else {
+              state.catalog.unshift({
+                id: 'cat_' + Date.now(),
+                category,
+                description,
+                unit,
+                defaultPrice: price,
+                materialMode
+              });
+            }
+            saveCatalog();
+            renderCatalog();
+            showToast('Catálogo atualizado!');
+          }
+
+          closeItemModal();
+        });
+
+        // Ações na aba Resumo (WhatsApp, PDF, Salvar Histórico)
+        document.getElementById('btn-copy-whatsapp').addEventListener('click', copyWhatsAppToClipboard);
+        document.getElementById('btn-copy-whatsapp-secondary').addEventListener('click', copyWhatsAppToClipboard);
+        document.getElementById('btn-print-pdf').addEventListener('click', () => window.print());
+        document.getElementById('btn-save-history').addEventListener('click', saveBudgetToHistory);
+        document.getElementById('btn-save-current-from-profile').addEventListener('click', saveBudgetToHistory);
+
+        // Apagar todos os orçamentos salvos no histórico
+        document.getElementById('btn-clear-all-history').addEventListener('click', async () => {
+          if (state.history.length === 0) return;
+          const ok = await askConfirmation(
+            'Apagar Todos os Orçamentos',
+            `Deseja apagar permanentemente todos os ${state.history.length} orçamento(s) salvos no histórico?`
+          );
+          if (ok) {
+            state.history = [];
+            saveHistoryStorage();
+            renderHistory();
+            showToast('Todos os orçamentos salvos foram apagados.');
+          }
+        });
+
+        // Ações no Histórico (Abrir, Duplicar, Excluir)
+        document.getElementById('history-list').addEventListener('click', async (e) => {
+          const btn = e.target.closest('[data-hist-action]');
+          if (!btn) return;
+          const action = btn.getAttribute('data-hist-action');
+          const id = btn.getAttribute('data-id');
+          const entry = state.history.find((h) => h.id === id);
+          if (!entry) return;
+
+          if (action === 'load') {
+            state.budget = JSON.parse(JSON.stringify(entry));
+            saveCurrentBudget();
+            populateInputsFromState();
+            renderAll();
+            switchTab('obra');
+            showToast(`Orçamento #${String(entry.number).padStart(2, '0')} carregado!`);
+          } else if (action === 'duplicate') {
+            state.counter += 1;
+            localStorage.setItem(STORAGE_KEYS.COUNTER, String(state.counter));
+            const copy = JSON.parse(JSON.stringify(entry));
+            copy.id = 'orc_' + Date.now();
+            copy.number = state.counter;
+            copy.createdAt = new Date().toISOString();
+            state.budget = copy;
+            saveCurrentBudget();
+            populateInputsFromState();
+            renderAll();
+            switchTab('obra');
+            showToast(`Orçamento duplicado como #${String(state.counter).padStart(2, '0')}!`);
+          } else if (action === 'delete') {
+            const ok = await askConfirmation(
+              'Excluir Orçamento',
+              `Deseja excluir permanentemente o orçamento #${String(entry.number).padStart(2, '0')}?`
+            );
+            if (ok) {
+              state.history = state.history.filter((h) => h.id !== id);
+              saveHistoryStorage();
+              renderHistory();
+              showToast('Orçamento excluído do histórico.');
+            }
+          }
+        });
+      }
+
+      // Inicializar aplicativo
+      function setupMobileManifest() {
+        try {
+          const companyName = (state.profile.name || '').trim() || 'OrçaObra';
+          const manifest = {
+            name: companyName,
+            short_name: companyName.slice(0, 12),
+            start_url: '.',
+            display: 'standalone',
+            background_color: '#f1f5f9',
+            theme_color: '#0f172a',
+            icons: [
+              {
+                src: 'https://placehold.co/192x192/f97316/ffffff?text=OB',
+                sizes: '192x192',
+                type: 'image/png'
+              },
+              {
+                src: 'https://placehold.co/512x512/f97316/ffffff?text=OB',
+                sizes: '512x512',
+                type: 'image/png'
+              }
+            ]
+          };
+          const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+          const manifestUrl = URL.createObjectURL(blob);
+          let link = document.querySelector('link[rel="manifest"]');
+          if (!link) {
+            link = document.createElement('link');
+            link.rel = 'manifest';
+            document.head.appendChild(link);
+          }
+          link.href = manifestUrl;
+        } catch (err) {
+          console.error('Erro ao configurar manifesto mobile:', err);
+        }
+      }
+
+      loadState();
+      setupMobileManifest();
+      populateInputsFromState();
+      bindEvents();
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
